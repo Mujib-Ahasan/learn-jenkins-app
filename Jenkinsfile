@@ -24,7 +24,7 @@ pipeline {
         stage( 'Test'){
             steps{
                 sh'''
-                Testing the Node app!
+                echo Testing the Node app!
                 '''
             }
         }
