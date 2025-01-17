@@ -14,6 +14,7 @@ pipeline {
                 }
             }
             steps {
+                echo 'just changed a little bit!!!'
                 sh'''
                 ls -la
                 node --version
