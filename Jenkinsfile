@@ -67,7 +67,7 @@ pipeline {
                     }
                     post{
                         always{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'playwright Local Report', reportTitles: '', useWrapperFileDirectly: true])
                             }
                         }
               }
@@ -84,13 +84,35 @@ pipeline {
             }
             steps{
                 sh'''
-                 npm install netlify-cli
-                 node_modules/.bin/netlify --version
-                 echo "deploy to production to production site id: $NETLIFY_SITE_ID"
-                 node_modules/.bin/netlify status
-                 node_modules/.bin/netlify deploy --dir=build --prod 
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "deploy to production to production site id: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod 
                 '''
             }
+        }
+
+        stage('Deploy E2E Test'){
+            agent{
+                docker{
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+            environment{
+                CI_ENVIRONMENT_URL = ' https://singular-mochi-58e1bd.netlify.app'
+                }
+            steps{
+                sh'''
+                npx playwright test --reporter=html
+                '''
+            }
+            post{
+                always{
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'playwright post Deploy Report', reportTitles: '', useWrapperFileDirectly: true])
+                    }
+                }
         }
   
     }  
