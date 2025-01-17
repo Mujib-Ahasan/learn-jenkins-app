@@ -68,6 +68,8 @@ pipeline {
               }
         }
 
+        }
+
         stage('Deploy'){
             agent{
                 docker{
@@ -81,8 +83,6 @@ pipeline {
                  node_modules/.bin/netlify --veriosn
                 '''
             }
-        }
-
         }
   
     }  
