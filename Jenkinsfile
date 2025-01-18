@@ -91,7 +91,7 @@ pipeline {
                     
                 '''
                 script{
-                    env.SITE_URL=sh(script "node_modules/.bin/node-jq -r '.deploy_url' json-output.json",returnStdout: true)
+                    env.SITE_URL=sh(script: "node_modules/.bin/node-jq -r '.deploy_url' json-output.json",returnStdout: true)
                 }
             }
         }
@@ -118,25 +118,6 @@ pipeline {
                     }
                 }
         }
-
-        stage('Deploy'){
-            agent{
-                docker{
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps{
-                sh'''
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
-                    echo "deploy to production to production site id: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod 
-                '''
-            }
-        }
-
         stage('Deploy E2E Test'){
             agent{
                 docker{
@@ -149,7 +130,13 @@ pipeline {
                 }
             steps{
                 sh'''
-                npx playwright test --reporter=html
+                    node --version
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "deploy to production to production site id: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod 
+                    npx playwright test --reporter=html
                 '''
             }
             post{
