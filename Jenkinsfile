@@ -75,6 +75,23 @@ pipeline {
 
         }
 
+        stage('Deploy staging'){
+            agent{
+                docker{
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps{
+                sh'''
+                    npm install netlify-cli
+                    echo "deploy to non-production site id: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build 
+                '''
+            }
+        }
+
         stage('Deploy'){
             agent{
                 docker{
@@ -101,7 +118,7 @@ pipeline {
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = ' https://singular-mochi-58e1bd.netlify.app'
+                CI_ENVIRONMENT_URL = 'https://beautiful-cranachan-040876.netlify.app'
                 }
             steps{
                 sh'''
