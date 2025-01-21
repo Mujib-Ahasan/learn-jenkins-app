@@ -8,12 +8,6 @@ pipeline {
 
     stages {
         
-        stage('docker'){
-            steps{
-                sh'docker build -t my-playwright .'
-            } 
-        }
-        
         stage('Build') {
             agent{
                 docker{
@@ -61,14 +55,13 @@ pipeline {
                 stage('E2E'){
                     agent{
                         docker{
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'my-playwright'
                             reuseNode true
                         }
                     }
                     steps{
                         sh'''
-                        npm install serve
-                        node_modules/.bin/serve -s build &
+                        serve -s build &
                         sleep 10
                         npx playwright test --reporter=html
                         '''
@@ -120,7 +113,6 @@ pipeline {
                 }
             steps{
                 sh'''
-                    netlify-cli
                     echo "deploy to production to production site id: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --prod 
