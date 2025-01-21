@@ -101,6 +101,13 @@ pipeline {
                     }
                 }
         }
+
+        stage('approval'){
+            steps{
+                input 'would you like to deploy?'
+            }
+
+        }
         stage('Deploy E2E Test'){
             agent{
                 docker{
