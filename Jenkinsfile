@@ -1,12 +1,19 @@
 pipeline {
     agent any
     environment{
-        NETLIFY_SITE_ID = '9a215b87-8ab7-4307-bc54-5968ba072fc6'
+        NETLIFY_SITE_ID = '5455f9bf-dea1-4e7e-8b45-7525172c0f7d'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
         REACT_APP_VERSION = "1.0.$BUILD_ID"
     }
 
     stages {
+        
+        stage('docker'){
+            steps{
+                sh'docker build -t my-playwright .'
+            } 
+        }
+        
         stage('Build') {
             agent{
                 docker{
@@ -78,7 +85,7 @@ pipeline {
         stage('staging and E2E'){
             agent{
                 docker{
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'my-playwright'
                     reuseNode true
                 }
             }
@@ -87,12 +94,11 @@ pipeline {
                 }
             steps{
                 sh'''
-                    npm install netlify-cli node-jq
                     echo "deploy to non-production site id: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > json-output.json
+                    netlify status
+                    netlify deploy --dir=build --json > json-output.json
                     sleep 10
-                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json-output.json) 
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' json-output.json) 
                     npx playwright test --reporter=html
                 '''
             }
@@ -105,21 +111,19 @@ pipeline {
         stage('Deploy E2E Test'){
             agent{
                 docker{
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'my-playwright'
                     reuseNode true
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = 'https://beautiful-cranachan-040876.netlify.app'
+                CI_ENVIRONMENT_URL = 'https://chic-gingersnap-878078.netlify.app'
                 }
             steps{
                 sh'''
-                    node --version
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    netlify-cli
                     echo "deploy to production to production site id: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod 
+                    netlify status
+                    netlify deploy --dir=build --prod 
                     sleep 10
                     npx playwright test --reporter=html
                 '''
