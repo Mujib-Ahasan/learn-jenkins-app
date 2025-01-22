@@ -19,14 +19,13 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
                     sh'''
                     aws --version
-                    aws s3 ls
+                    echo "hello form AWS s3" > index.html
+                    aws s3 cp index.html s3://mujib/ram.html
                     '''
-               }
-                
+               }  
             }
         }
     
-        
         stage('Build') {
             agent{
                 docker{
@@ -47,7 +46,6 @@ pipeline {
             }
         }
         
-
         stage('Tests'){
             parallel{
                 stage('Unit Tests'){
