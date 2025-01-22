@@ -17,7 +17,7 @@ pipeline {
             }
             steps{
                 sh'''
-                aws --vesion
+                aws --version
                 '''
             }
         }
