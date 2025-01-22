@@ -8,23 +8,7 @@ pipeline {
 
     stages {
         
-        stage('aws'){
-            agent{
-                docker{
-                    image 'amazon/aws-cli'
-                    args "--entrypoint=''"
-            }
-            }
-            steps{
-                withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
-                    sh'''
-                    aws --version
-                    echo "hello form AWS s3" > index.html
-                    aws s3 cp index.html s3://mujib/ram.html
-                    '''
-               }  
-            }
-        }
+        
     
         stage('Build') {
             agent{
@@ -43,6 +27,24 @@ pipeline {
                 npm run build
                 ls -la
                 '''
+            }
+        }
+
+        stage('aws'){
+            agent{
+                docker{
+                    image 'amazon/aws-cli'
+                    args "--entrypoint=''"
+                    reuseNode true
+            }
+            }
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
+                    sh'''
+                    aws --version
+                    aws s3 sync build s3://mujib
+                    '''
+               }  
             }
         }
         
