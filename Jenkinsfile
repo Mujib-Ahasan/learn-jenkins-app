@@ -13,15 +13,14 @@ pipeline {
                 docker{
                     image 'amazon/aws-cli'
             }
-
+            }
             steps{
                 sh'''
                 aws --vesion
                 '''
             }
         }
-
-        }
+    
         
         stage('Build') {
             agent{
