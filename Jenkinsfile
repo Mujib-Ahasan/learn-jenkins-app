@@ -30,24 +30,6 @@ pipeline {
             }
         }
 
-        stage('aws'){
-            agent{
-                docker{
-                    image 'amazon/aws-cli'
-                    args "--entrypoint=''"
-                    reuseNode true
-            }
-            }
-            steps{
-                withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
-                    sh'''
-                    aws --version
-                    aws s3 sync build s3://mujib
-                    '''
-               }  
-            }
-        }
-        
         stage('Tests'){
             parallel{
                 stage('Unit Tests'){
@@ -93,8 +75,27 @@ pipeline {
               }
         }
 
+        }
+
+        stage('deploy to staging'){
+            agent{
+                docker{
+                    image 'amazon/aws-cli'
+                    args "--entrypoint=''"
+                    reuseNode true
+            }
+            }
+
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
+                    sh'''
+                    aws --version
+                    aws s3 sync build s3://staging-for-jenkins-app --delete
+                    '''
+               }  
+            }
         }        
-        stage('staging and E2E'){
+        stage('E2E test after staging'){
             agent{
                 docker{
                     image 'my-playwright'
@@ -102,15 +103,10 @@ pipeline {
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
+                CI_ENVIRONMENT_URL = 'http://staging-for-jenkins-app.s3-website-us-east-1.amazonaws.com'
                 }
             steps{
                 sh'''
-                    echo "deploy to non-production site id: $NETLIFY_SITE_ID"
-                    netlify status
-                    netlify deploy --dir=build --json > json-output.json
-                    sleep 10
-                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' json-output.json) 
                     npx playwright test --reporter=html
                 '''
             }
@@ -127,7 +123,27 @@ pipeline {
             }
 
         }
-        stage('Deploy E2E Test'){
+
+
+        stage('deploy to production'){
+            agent{
+                docker{
+                    image 'amazon/aws-cli'
+                    args "--entrypoint=''"
+                    reuseNode true
+            }
+            }
+
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'aws-cli', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) { 
+                    sh'''
+                    aws --version
+                    aws s3 sync build s3://mujib
+                    '''
+               }  
+            }
+        }
+        stage('E2E Test after deploy aws'){
             agent{
                 docker{
                     image 'my-playwright'
@@ -135,14 +151,10 @@ pipeline {
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = 'https://chic-gingersnap-878078.netlify.app'
+                CI_ENVIRONMENT_URL = 'http://mujib.s3-website-us-east-1.amazonaws.com'
                 }
             steps{
                 sh'''
-                    echo "deploy to production to production site id: $NETLIFY_SITE_ID"
-                    netlify status
-                    netlify deploy --dir=build --prod 
-                    sleep 10
                     npx playwright test --reporter=html
                 '''
             }
